@@ -1,0 +1,97 @@
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+import random
+import uuid
+import io
+import base64
+from PIL import Image, ImageDraw, ImageFont
+
+app = Flask(__name__)
+
+CORS(app)
+
+SESSION_STORAGE = {}
+
+def text_to_base64_image(text):
+    img = Image.new('RGB', (60, 60), color=(255, 255, 255))
+    d = ImageDraw.Draw(img)
+    try:
+        font = ImageFont.truetype("malgun.ttf", 24)
+    except IOError:
+        font = ImageFont.load_default()
+    if text != 'blank':
+        d.text((20, 15), text, font=font, fill=(0, 0, 0))
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG") 
+    return f"data:image/png;base64,{base64.b64encode(buffered.getvalue()).decode('utf-8')}"
+
+# [API] 키패드 + 토큰 발급
+@app.route('/api/keypad', methods=['GET'])
+def get_keypad():
+    real_values = [str(i) for i in range(10)] + ['blank', 'blank']
+    random.shuffle(real_values)
+    
+    # 1. 고유한 세션 토큰(티켓) 생성
+    session_token = str(uuid.uuid4())
+    
+    response_list = []
+    key_map = {}
+    
+    for value in real_values:
+        unique_id = str(uuid.uuid4())
+        image_data = text_to_base64_image(value)
+        response_list.append({
+            "id": unique_id,
+            "image": image_data,
+            "is_blank": (value == 'blank')
+        })
+        key_map[unique_id] = value
+
+    # 2. 서버 메모리에 토큰과 족보를 저장
+    SESSION_STORAGE[session_token] = key_map
+    
+    print(f"✅ 토큰 발급됨: {session_token}")
+    
+    # 3. 프론트엔드에게 '레이아웃'과 '토큰'을 함께 줌
+    return jsonify({
+        "token": session_token,
+        "layout": response_list
+    })
+
+@app.route('/api/submit', methods=['POST'])
+def submit_input():
+    try:
+        req_data = request.json
+        token = req_data.get('token')
+        input_ids = req_data.get('input_ids', [])
+        
+        print(f"\n--- [DEBUG] 데이터 도착 ---")
+        print(f"1. 받은 토큰: {token}")
+        print(f"2. 받은 ID 개수: {len(input_ids)}개")
+        
+        # 저장소 확인
+        print(f"3. 현재 서버가 기억하는 토큰 목록: {list(SESSION_STORAGE.keys())}")
+
+        key_map = SESSION_STORAGE.get(token)
+        
+        if not key_map:
+            print("🚨 오류: 매칭되는 토큰이 없음! (서버 재시작됨? 브라우저 새로고침 필요)")
+            return jsonify({"decrypted": "Token Error (새로고침 하세요)"})
+
+        result_string = ""
+        for uid in input_ids:
+            real_value = key_map.get(uid)
+            if real_value:
+                result_string += real_value
+            else:
+                print(f"   - 경고: ID {uid}에 해당하는 값이 없음")
+    
+        print(f"🔓 최종 해독 결과: '{result_string}'")
+        return jsonify({"decrypted": result_string})
+
+    except Exception as e:
+        print(f"🔥 서버 에러 발생: {e}")
+        return jsonify({"decrypted": "Server Error"})
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
