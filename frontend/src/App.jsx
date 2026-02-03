@@ -11,7 +11,8 @@ function App() {
   const [sessionToken, setSessionToken] = useState('') // 서버가 준 입장권
 
   useEffect(() => {
-    // 백엔드에서 키패드 정보와 토큰을 받아옴
+    // useEffect <- React에서 화면 처음 띄울때 실행하는 함수
+    //여기서 백엔드의 /api/keypad 호출함
     axios.get('/api/keypad') 
       .then(res => {
         setLayout(res.data.layout)
@@ -49,6 +50,7 @@ function App() {
   }
 
   return (
+    //여기서 띄움
     <div className="container">
       <h1>이미지 보안 키패드</h1>
       

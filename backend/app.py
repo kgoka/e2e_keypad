@@ -28,34 +28,38 @@ def text_to_base64_image(text):
     img.save(buffered, format="PNG") 
     return f"data:image/png;base64,{base64.b64encode(buffered.getvalue()).decode('utf-8')}"
 
-# [API] 키패드 + 토큰 발급
+# 프론트의 useEffect에서 호출함
 @app.route('/api/keypad', methods=['GET'])
 def get_keypad():
+    #real_values에 0부터 9까지 저장하고 공백(blank) 두개까지 더함
     real_values = [str(i) for i in range(10)] + ['blank', 'blank']
     random.shuffle(real_values)
     
-    # 1. 고유한 세션 토큰(티켓) 생성
     session_token = str(uuid.uuid4())
-    
+    #response_list = 프론트 전달용 , key_map은 백엔드 저장용
     response_list = []
     key_map = {}
     
     for value in real_values:
+        #uuid.uuid4로 키값 생성
         unique_id = str(uuid.uuid4())
         image_data = text_to_base64_image(value)
+        #위의 text_to_base64_image 함수 호출해서 숫자에 해당하는 이미지파일 받아옴
         response_list.append({
             "id": unique_id,
             "image": image_data,
             "is_blank": (value == 'blank')
         })
-        key_map[unique_id] = value
+        #프론트에 보낼 response_list 만듦 여기 키값, 이미지값 포함되어있고 이거 프론트로 전송
 
-    # 2. 서버 메모리에 토큰과 족보를 저장
+        key_map[unique_id] = value
+        #key_map에 키값에 해당하는 실제값 저장
+
     SESSION_STORAGE[session_token] = key_map
     
     print(f"✅ 토큰 발급됨: {session_token}")
     
-    # 3. 프론트엔드에게 '레이아웃'과 '토큰'을 함께 줌
+   
     return jsonify({
         "token": session_token,
         "layout": response_list
