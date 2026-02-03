@@ -24,10 +24,13 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  display: flex; /* Flexbox 활성화 */
+  flex-direction: column; /* 요소들을 세로로 쌓음 */
+  justify-content: center; /* 수직 중앙 정렬 (세로축) */
+  align-items: center; /* 수평 중앙 정렬 (가로축) */
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100vh; /* 화면 전체 높이 확보 */
+  text-align: center; /* 텍스트 자체도 중앙 정렬 */
 }
 
 h1 {

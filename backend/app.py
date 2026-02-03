@@ -13,6 +13,8 @@ CORS(app)
 SESSION_STORAGE = {}
 
 def text_to_base64_image(text):
+    #Pillow(PIL) 라이브러리를 사용해 60x60 크기의 흰색 이미지를 만들기.
+
     img = Image.new('RGB', (60, 60), color=(255, 255, 255))
     d = ImageDraw.Draw(img)
     try:
@@ -20,6 +22,7 @@ def text_to_base64_image(text):
     except IOError:
         font = ImageFont.load_default()
     if text != 'blank':
+        #공백이 아닐경우 숫자를 그려라
         d.text((20, 15), text, font=font, fill=(0, 0, 0))
     buffered = io.BytesIO()
     img.save(buffered, format="PNG") 
