@@ -52,7 +52,7 @@ function App() {
   return (
     //여기서 띄움
     <div className="container">
-      <h1>이미지 보안 키패드</h1>
+      <h1>E2E 키패드</h1>
       
       <div className="input-display">
         {inputIds.length === 0 ? "비밀번호 입력" : inputIds.map((_, i) => <span key={i}>*</span>)}
