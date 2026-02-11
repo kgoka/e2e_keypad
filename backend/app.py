@@ -11,8 +11,6 @@ app = Flask(__name__)
 # 프론트엔드 포트(예: 5173)에서의 요청을 허용
 CORS(app, supports_credentials=True) 
 
-# [중요] 실제 서비스에서는 Redis나 DB를 사용해야 합니다.
-# 여기서는 간단한 구현을 위해 메모리 딕셔너리에 저장합니다.
 # 구조: { "session_token_1": { "uuid_a": "1", "uuid_b": "2"... }, ... }
 SESSION_STORAGE = {}
 
@@ -56,7 +54,7 @@ def get_keypad():
         # 정답지에 기록 (UUID -> 실제 숫자)
         key_map[unique_id] = value
     
-    # [수정됨] 세션 토큰 생성 및 저장
+    
     # 클라이언트에게는 token을 주고, 서버는 token:key_map 쌍을 기억합니다.
     session_token = str(uuid.uuid4())
     SESSION_STORAGE[session_token] = key_map
