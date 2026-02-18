@@ -1,37 +1,32 @@
 from flask import Blueprint, current_app, jsonify, request
 
-from services.keypad_service import InvalidSessionError
+from services.crypto_service import decrypt_ciphertext_b64, get_public_key_pem
 
-# /api/* 경로를 담당하는 키패드 라우터
 keypad_bp = Blueprint("keypad", __name__, url_prefix="/api")
 
 
 @keypad_bp.get("/keypad")
 def get_keypad():
-    # 앱에 등록된 서비스로 랜덤 키패드 레이아웃 생성
     keypad_service = current_app.extensions["keypad_service"]
     payload = keypad_service.build_layout()
+    payload["public_key"] = get_public_key_pem()
     return jsonify(payload)
 
 
 @keypad_bp.post("/submit")
 def submit_input():
-    # 요청 바디에서 토큰/입력 ID 목록 추출
     data = request.get_json(silent=True) or {}
     token = data.get("token")
-    input_ids = data.get("input_ids", [])
+    encrypted_input_ids = data.get("encrypted_input_ids")
 
-    # 타입이 맞지 않으면 바로 400 응답
-    if not isinstance(input_ids, list):
-        return jsonify({"error": "input_ids must be a list"}), 400
+    if not isinstance(encrypted_input_ids, str) or not encrypted_input_ids:
+        return jsonify({"error": "encrypted_input_ids is required"}), 400
 
     keypad_service = current_app.extensions["keypad_service"]
+    if not keypad_service.has_session(token):
+        return jsonify({"error": "Invalid or expired session token"}), 400
 
-    try:
-        # UUID 목록을 실제 숫자 문자열로 복원
-        decrypted = keypad_service.decode_input_ids(token, input_ids)
-    except InvalidSessionError as exc:
-        # 세션 토큰 오류(누락/만료/불일치)
-        return jsonify({"error": str(exc)}), 400
-
+    decrypted_input_ids = decrypt_ciphertext_b64(encrypted_input_ids)
+    input_ids = [item for item in decrypted_input_ids.split(",") if item]
+    decrypted = keypad_service.decode_input_ids(token, input_ids)
     return jsonify({"decrypted": decrypted, "message": "Submitted successfully."})
