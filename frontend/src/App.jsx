@@ -24,7 +24,7 @@ function App() {
         setLoading(false)
       })
   }, [])
-
+  //계속더해
   const handleKeyClick = (item) => {
     if (item.is_blank) return;
     setInputIds(prev => [...prev, item.id]); 
@@ -35,7 +35,7 @@ function App() {
 
   const handleSubmit = async () => {
     try {
-      // [수정완료] input_ids 로 변수명을 맞춰서 전송
+      
       const res = await axios.post('/api/submit', { 
         token: sessionToken, 
         input_ids: inputIds 
@@ -76,6 +76,7 @@ function App() {
 
           <div className="action-row">
             <button className="action-btn clear-all" onClick={handleClearAll}>전체삭제</button>
+            {/* 여기 */}
             <button className="action-btn submit" onClick={handleSubmit}>입력</button>
             <button className="action-btn delete" onClick={handleDelete}>←</button>
           </div>
